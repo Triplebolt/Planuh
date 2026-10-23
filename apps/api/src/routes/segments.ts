@@ -3,7 +3,9 @@ import {
   assertUniqueName,
   planHoldsBudget,
   SegmentTypeInUseError,
+  SegmentTypeNotFoundError,
   SegmentValueInUseError,
+  SegmentValueNotFoundError,
 } from '@plannuh/domain';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -58,6 +60,10 @@ export function registerSegmentRoutes(app: FastifyInstance): void {
     const body = createSegmentValueBody.parse(request.body);
 
     const created = await withTenantTransaction(app.db, auth.workspaceId, async (tx) => {
+      const type = await segmentsRepository.getSegmentType(tx, id);
+      if (!type) {
+        throw new SegmentTypeNotFoundError(id);
+      }
       const existingNames = await segmentsRepository.listSegmentValueNames(tx, id);
       assertUniqueName('segment-value', body.name, existingNames);
       return segmentsRepository.createSegmentValue(tx, auth.workspaceId, id, body.name);
@@ -78,12 +84,13 @@ export function registerSegmentRoutes(app: FastifyInstance): void {
 
     return withTenantTransaction(app.db, auth.workspaceId, async (tx) => {
       const value = await segmentsRepository.getSegmentValue(tx, id);
-      if (value) {
-        const siblingNames = (
-          await segmentsRepository.listSegmentValueNames(tx, value.segmentTypeId)
-        ).filter((name) => name !== value.name);
-        assertUniqueName('segment-value', body.name, siblingNames);
+      if (!value) {
+        throw new SegmentValueNotFoundError(id);
       }
+      const siblingNames = (
+        await segmentsRepository.listSegmentValueNames(tx, value.segmentTypeId)
+      ).filter((name) => name !== value.name);
+      assertUniqueName('segment-value', body.name, siblingNames);
       return segmentsRepository.renameSegmentValue(tx, id, body.name);
     });
   });
@@ -97,9 +104,13 @@ export function registerSegmentRoutes(app: FastifyInstance): void {
     requireRole(auth.role, ['Admin']);
     const { id } = idParams.parse(request.params);
 
-    return withTenantTransaction(app.db, auth.workspaceId, (tx) =>
-      segmentsRepository.archiveSegmentValue(tx, id),
-    );
+    return withTenantTransaction(app.db, auth.workspaceId, async (tx) => {
+      const value = await segmentsRepository.getSegmentValue(tx, id);
+      if (!value) {
+        throw new SegmentValueNotFoundError(id);
+      }
+      return segmentsRepository.archiveSegmentValue(tx, id);
+    });
   });
 
   /**

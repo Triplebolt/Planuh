@@ -1,9 +1,14 @@
 import {
+  AllocationAlreadyAssignedError,
+  AllocationNotFoundError,
   ArchivedSegmentValueError,
   DuplicateSegmentNameError,
   NoSegmentTypeError,
   SegmentTypeInUseError,
+  SegmentTypeNotFoundError,
   SegmentValueInUseError,
+  SegmentValueNotFoundError,
+  SegmentValueTypeMismatchError,
   SplitAmountMismatchError,
 } from '@plannuh/domain';
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
@@ -66,6 +71,22 @@ export function errorHandler(
   }
   if (error instanceof ArchivedSegmentValueError) {
     reply.code(422).send({ error: 'archived_segment_value', message: error.message });
+    return;
+  }
+  if (
+    error instanceof SegmentTypeNotFoundError ||
+    error instanceof SegmentValueNotFoundError ||
+    error instanceof AllocationNotFoundError
+  ) {
+    reply.code(404).send({ error: 'not_found', message: error.message });
+    return;
+  }
+  if (error instanceof SegmentValueTypeMismatchError) {
+    reply.code(422).send({ error: 'segment_value_type_mismatch', message: error.message });
+    return;
+  }
+  if (error instanceof AllocationAlreadyAssignedError) {
+    reply.code(409).send({ error: 'allocation_already_assigned', message: error.message });
     return;
   }
 

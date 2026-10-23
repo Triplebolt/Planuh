@@ -53,3 +53,50 @@ export class ArchivedSegmentValueError extends Error {
     this.name = 'ArchivedSegmentValueError';
   }
 }
+
+export class SegmentTypeNotFoundError extends Error {
+  constructor(id: string) {
+    super(`No segment type "${id}" in this workspace`);
+    this.name = 'SegmentTypeNotFoundError';
+  }
+}
+
+export class SegmentValueNotFoundError extends Error {
+  constructor(id: string) {
+    super(`No segment value "${id}" in this workspace`);
+    this.name = 'SegmentValueNotFoundError';
+  }
+}
+
+export class AllocationNotFoundError extends Error {
+  constructor(id: string) {
+    super(`No allocation "${id}" in this workspace`);
+    this.name = 'AllocationNotFoundError';
+  }
+}
+
+/**
+ * A segment value must belong to the segment type it is being assigned
+ * under — the foreign key only proves the value row exists somewhere, not
+ * that it belongs to the right type (or the caller's workspace, since a
+ * cross-workspace id resolves to null through RLS rather than this error).
+ */
+export class SegmentValueTypeMismatchError extends Error {
+  constructor(valueId: string, segmentTypeId: string) {
+    super(`Segment value "${valueId}" does not belong to segment type "${segmentTypeId}"`);
+    this.name = 'SegmentValueTypeMismatchError';
+  }
+}
+
+/**
+ * A split only makes sense while the allocation is "Not set" for the given
+ * type — i.e. no segment_assignment row for it carries a concrete value yet.
+ */
+export class AllocationAlreadyAssignedError extends Error {
+  constructor(segmentTypeId: string) {
+    super(
+      `This allocation already has a value for segment type "${segmentTypeId}" — it is not "Not set"`,
+    );
+    this.name = 'AllocationAlreadyAssignedError';
+  }
+}

@@ -71,4 +71,31 @@ describe('SegmentsSetupStep', () => {
 
     expect(await screen.findByText('EMEA')).toBeInTheDocument();
   });
+
+  it('[AC-SEG-001.4] shows the duplicate-name refusal when adding a segment type', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(async (_url, init) => {
+      const method = (init as RequestInit | undefined)?.method ?? 'GET';
+      if (method === 'GET') {
+        return { ok: true, status: 200, json: async () => [] };
+      }
+      return {
+        ok: false,
+        status: 409,
+        json: async () => ({
+          error: 'duplicate_name',
+          message: 'A segment type named "Region" already exists',
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    render(<SegmentsSetupStep auth={auth} onComplete={() => {}} />);
+    const user = userEvent.setup();
+
+    await user.type(screen.getByPlaceholderText('e.g. Region'), 'Region');
+    await user.click(screen.getByRole('button', { name: 'Add segment type' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'A segment type named "Region" already exists',
+    );
+  });
 });

@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type * as schema from '../schema.js';
 import { allocation, campaign, segmentAssignment, segmentType, segmentValue } from '../schema.js';
 import type { TenantTransaction } from '../tenant.js';
@@ -53,15 +53,9 @@ export async function createSegmentValue(
   return firstOrThrow(rows, 'createSegmentValue');
 }
 
-/**
- * Active (non-archived) values for a type, offered wherever the type is
- * chosen (AC-SEG-001.2, task-seg-setup-step-picker's SegmentValuePicker).
- */
-export async function listActiveSegmentValues(tx: Tx, segmentTypeId: string) {
-  return tx
-    .select()
-    .from(segmentValue)
-    .where(and(eq(segmentValue.segmentTypeId, segmentTypeId), isNull(segmentValue.archivedAt)));
+export async function getSegmentType(tx: Tx, id: string) {
+  const rows = await tx.select().from(segmentType).where(eq(segmentType.id, id));
+  return rows[0] ?? null;
 }
 
 export async function getSegmentValue(tx: Tx, id: string) {

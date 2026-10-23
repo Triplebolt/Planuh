@@ -33,6 +33,8 @@ export function SegmentsSettingsPage({ auth }: SegmentsSettingsPageProps) {
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({});
   const [valueErrors, setValueErrors] = useState<Record<string, RowError>>({});
   const [typeErrors, setTypeErrors] = useState<Record<string, string>>({});
+  const [addTypeError, setAddTypeError] = useState<string | null>(null);
+  const [addValueErrors, setAddValueErrors] = useState<Record<string, string>>({});
 
   async function refresh() {
     setTypes(await listSegmentTypes(auth));
@@ -46,18 +48,40 @@ export function SegmentsSettingsPage({ auth }: SegmentsSettingsPageProps) {
   async function handleAddType(event: React.FormEvent) {
     event.preventDefault();
     if (newTypeName.trim() === '') return;
-    await createSegmentType(auth, newTypeName.trim());
-    setNewTypeName('');
-    await refresh();
+    try {
+      await createSegmentType(auth, newTypeName.trim());
+      setAddTypeError(null);
+      setNewTypeName('');
+      await refresh();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setAddTypeError(error.message);
+        return;
+      }
+      throw error;
+    }
   }
 
   async function handleAddValue(typeId: string, event: React.FormEvent) {
     event.preventDefault();
     const name = (newValueNames[typeId] ?? '').trim();
     if (name === '') return;
-    await createSegmentValue(auth, typeId, name);
-    setNewValueNames((prev) => ({ ...prev, [typeId]: '' }));
-    await refresh();
+    try {
+      await createSegmentValue(auth, typeId, name);
+      setAddValueErrors((prev) => {
+        const next = { ...prev };
+        delete next[typeId];
+        return next;
+      });
+      setNewValueNames((prev) => ({ ...prev, [typeId]: '' }));
+      await refresh();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setAddValueErrors((prev) => ({ ...prev, [typeId]: error.message }));
+        return;
+      }
+      throw error;
+    }
   }
 
   async function handleRename(valueId: string) {
@@ -127,6 +151,11 @@ export function SegmentsSettingsPage({ auth }: SegmentsSettingsPageProps) {
         <button type="submit" className="pl-btn pl-btn-secondary">
           Add segment type
         </button>
+        {addTypeError !== null ? (
+          <p role="alert" className="pl-hint-error">
+            {addTypeError}
+          </p>
+        ) : null}
       </form>
 
       {types.map((type) => (
@@ -227,6 +256,11 @@ export function SegmentsSettingsPage({ auth }: SegmentsSettingsPageProps) {
             <button type="submit" className="pl-btn pl-btn-secondary">
               Add value
             </button>
+            {addValueErrors[type.id] !== undefined ? (
+              <p role="alert" className="pl-hint-error">
+                {addValueErrors[type.id]}
+              </p>
+            ) : null}
           </form>
         </article>
       ))}

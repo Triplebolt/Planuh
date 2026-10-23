@@ -50,21 +50,44 @@ describe('segment type added after budget', () => {
     });
     expect(list.json().map((t: { id: string }) => t.id)).toContain(typeId);
 
+    // AC-SEG-003.3: the shared read shows the allocation's amount as "Not
+    // set" for the new type, end to end through the real GET route (not just
+    // the domain function in isolation).
+    const segments = await ctx.app.inject({
+      method: 'GET',
+      url: `/allocations/${allocationId}/segments`,
+      headers: headers('Admin'),
+    });
+    expect(segments.json()).toContainEqual({
+      segmentTypeId: typeId,
+      segmentTypeName: 'Channel',
+      segmentValueId: null,
+      label: 'Not set',
+      archived: false,
+    });
+
+    const value = await ctx.app.inject({
+      method: 'POST',
+      url: `/segment-types/${typeId}/values`,
+      headers: headers('Admin'),
+      payload: { name: 'Paid search' },
+    });
+    const valueId = value.json().id;
+
     // The allocation has no value for the new type yet — it is filed under
     // "Not set" (AC-SEG-003.2), which this API surfaces as no assignment row
-    // for that (entity, type) pair; a split (task-seg-resolve-not-set) is
-    // what gives it a concrete value (AC-SEG-003.3 is proven end to end
-    // there with domain's labelForAssignment).
+    // for that (entity, type) pair. A wrong total proves there *was* a
+    // "Not set" amount of 5000 to balance against (task-seg-resolve-not-set
+    // covers splitting it onto a real value).
     const split = await ctx.app.inject({
       method: 'POST',
       url: `/allocations/${allocationId}/split`,
       headers: headers('Manager'),
       payload: {
         segmentTypeId: typeId,
-        parts: [{ segmentValueId: '99999999-9999-4999-8999-999999999999', amountMinorUnits: '1' }],
+        parts: [{ segmentValueId: valueId, amountMinorUnits: '1' }],
       },
     });
-    // wrong total proves there *was* a "Not set" amount of 5000 to balance against
     expect(split.statusCode).toBe(422);
     expect(split.json().expected).toBe('5000');
 

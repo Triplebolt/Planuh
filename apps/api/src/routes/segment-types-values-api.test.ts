@@ -127,4 +127,24 @@ describe('segment types and values API', () => {
       expect(res.statusCode).toBe(403);
     },
   );
+
+  const ws2 = '22222222-2222-2222-2222-222222222222';
+
+  it('refuses to add a value under a segment type id that belongs to another workspace', async () => {
+    const type = await ctx.app.inject({
+      method: 'POST',
+      url: '/segment-types',
+      headers: headers('Admin', ws2),
+      payload: { name: 'Region' },
+    });
+    const typeId = type.json().id;
+
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/segment-types/${typeId}/values`,
+      headers: headers('Admin', ws1),
+      payload: { name: 'East' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
 });

@@ -179,4 +179,23 @@ describe('segment value lifecycle', () => {
     const type = list.json().find((t: { id: string }) => t.id === typeId);
     expect(type.values.map((v: { id: string }) => v.id)).not.toContain(valueId);
   });
+
+  it('refuses to rename a segment value that does not exist with a 404, not a 500', async () => {
+    const res = await ctx.app.inject({
+      method: 'PATCH',
+      url: '/segment-values/99999999-9999-4999-8999-999999999999',
+      headers: headers('Admin'),
+      payload: { name: 'Anything' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('refuses to archive a segment value that does not exist with a 404, not a 500', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/segment-values/99999999-9999-4999-8999-999999999999/archive',
+      headers: headers('Admin'),
+    });
+    expect(res.statusCode).toBe(404);
+  });
 });

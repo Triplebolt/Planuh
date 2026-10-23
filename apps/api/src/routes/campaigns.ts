@@ -1,5 +1,11 @@
 import { segmentsRepository, withTenantTransaction } from '@plannuh/db';
-import { ArchivedSegmentValueError } from '@plannuh/domain';
+import {
+  AllocationNotFoundError,
+  ArchivedSegmentValueError,
+  SegmentTypeNotFoundError,
+  SegmentValueNotFoundError,
+  SegmentValueTypeMismatchError,
+} from '@plannuh/domain';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { readAuthContext } from '../auth/context.js';
@@ -23,9 +29,13 @@ export function registerCampaignRoutes(app: FastifyInstance): void {
     requireRole(auth.role, ['Admin', 'Manager']);
     const body = createCampaignBody.parse(request.body);
 
-    const created = await withTenantTransaction(app.db, auth.workspaceId, (tx) =>
-      segmentsRepository.createCampaign(tx, auth.workspaceId, body.allocationId, body.name),
-    );
+    const created = await withTenantTransaction(app.db, auth.workspaceId, async (tx) => {
+      const allocation = await segmentsRepository.getAllocation(tx, body.allocationId);
+      if (!allocation) {
+        throw new AllocationNotFoundError(body.allocationId);
+      }
+      return segmentsRepository.createCampaign(tx, auth.workspaceId, body.allocationId, body.name);
+    });
 
     reply.code(201).send(created);
   });
@@ -41,8 +51,18 @@ export function registerCampaignRoutes(app: FastifyInstance): void {
     const body = setSegmentBody.parse(request.body);
 
     return withTenantTransaction(app.db, auth.workspaceId, async (tx) => {
+      const type = await segmentsRepository.getSegmentType(tx, body.segmentTypeId);
+      if (!type) {
+        throw new SegmentTypeNotFoundError(body.segmentTypeId);
+      }
       const value = await segmentsRepository.getSegmentValue(tx, body.segmentValueId);
-      if (value?.archivedAt) {
+      if (!value) {
+        throw new SegmentValueNotFoundError(body.segmentValueId);
+      }
+      if (value.segmentTypeId !== body.segmentTypeId) {
+        throw new SegmentValueTypeMismatchError(body.segmentValueId, body.segmentTypeId);
+      }
+      if (value.archivedAt !== null) {
         throw new ArchivedSegmentValueError(value.name);
       }
       return segmentsRepository.setAssignmentValue(
