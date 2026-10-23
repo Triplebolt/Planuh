@@ -221,3 +221,25 @@ export async function createCampaign(
 export async function deleteAllocation(tx: Tx, id: string) {
   await tx.delete(allocation).where(eq(allocation.id, id));
 }
+
+export async function updateAllocationAmount(tx: Tx, id: string, amountMinorUnits: bigint) {
+  const rows = await tx
+    .update(allocation)
+    .set({ amountMinorUnits })
+    .where(eq(allocation.id, id))
+    .returning();
+  return firstOrThrow(rows, 'updateAllocationAmount');
+}
+
+export async function listAssignmentsForEntity(
+  tx: Tx,
+  entityType: 'allocation' | 'campaign',
+  entityId: string,
+) {
+  return tx
+    .select()
+    .from(segmentAssignment)
+    .where(
+      and(eq(segmentAssignment.entityType, entityType), eq(segmentAssignment.entityId, entityId)),
+    );
+}
