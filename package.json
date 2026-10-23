@@ -1,0 +1,25 @@
+{
+  "name": "plannuh",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "scripts": {
+    "verify": "biome ci . && tsc -b && vitest run",
+    "test": "vitest run",
+    "lint": "biome ci .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "@vitejs/plugin-react": "4.3.4",
+    "jsdom": "25.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

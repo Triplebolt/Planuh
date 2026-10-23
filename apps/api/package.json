@@ -1,0 +1,23 @@
+{
+  "name": "@plannuh/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/app.ts",
+  "types": "./src/app.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@plannuh/db": "workspace:*",
+    "@plannuh/domain": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}
