@@ -1,0 +1,20 @@
+{
+  "name": "plannuh",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "scripts": {
+    "verify": "biome ci . && tsc -b && vitest run",
+    "test": "vitest run",
+    "lint": "biome ci .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}
