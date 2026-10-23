@@ -3,7 +3,9 @@ export class DuplicateSegmentNameError extends Error {
   readonly name_: string;
 
   constructor(scope: 'segment-type' | 'segment-value', name: string) {
-    super(`A ${scope === 'segment-type' ? 'segment type' : 'segment value'} named "${name}" already exists`);
+    super(
+      `A ${scope === 'segment-type' ? 'segment type' : 'segment value'} named "${name}" already exists`,
+    );
     this.name = 'DuplicateSegmentNameError';
     this.scope = scope;
     this.name_ = name;

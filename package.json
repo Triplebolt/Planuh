@@ -2,6 +2,7 @@
   "name": "plannuh",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": "24.22.1"

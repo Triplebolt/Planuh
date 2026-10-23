@@ -14,7 +14,9 @@ describe('assertUniqueName', () => {
   });
 
   it('[AC-SEG-001.4] refuses a segment value name that duplicates one in the same type, trimmed and case-insensitive', () => {
-    expect(() => assertUniqueName('segment-value', '  east  ', ['East'])).toThrow(DuplicateSegmentNameError);
+    expect(() => assertUniqueName('segment-value', '  east  ', ['East'])).toThrow(
+      DuplicateSegmentNameError,
+    );
   });
 
   it('[AC-SEG-001.4] allows the same value name in a different scope (caller passes only same-scope names)', () => {

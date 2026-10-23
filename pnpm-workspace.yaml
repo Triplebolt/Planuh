@@ -1,3 +1,11 @@
 packages:
   - apps/*
   - packages/*
+
+allowBuilds:
+  '@electric-sql/pglite': true
+  esbuild: true
+
+onlyBuiltDependencies:
+  - esbuild
+  - '@electric-sql/pglite'
